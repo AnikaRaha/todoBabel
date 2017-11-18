@@ -1,112 +1,115 @@
 (function(){
 
-	var todos = [];
-  var existingValues;
+	let todos = [];
+  let existingValues;
 
-	$(window).on('load', function(){
-	    existingValues = JSON.parse(localStorage.getItem('allVal'));
-       	if (existingValues !== null){
-       		console.log(existingValues);
-       		todos = todos.concat(existingValues);
-       		sliceElements(todos);
-       	};
-	});
+  function loadPrevValues() {
+    existingValues = JSON.parse(localStorage.getItem('allVal'));
+      if (existingValues !== null){
+        console.log(existingValues);
+        todos = todos.concat(existingValues);
+        sliceElements(todos);
+      };
+  }
+
+  function getValuesFromForm() {
+    if ($('#doneT').is(':checked')) {
+      let done = ($('#doneT').val());
+    }
+    else if ($('#doneF').is(':checked')) {
+      let done = ($('#doneF').val());
+    }
+
+    if ($('#priorityH').is(':checked')) {
+      let priority = ($('#priorityH').val());
+    }
+    else if ($('#priorityM').is(':checked')) {
+      let priority = ($('#priorityM').val());
+    }
+    else if ($('#priorityL').is(':checked')) {
+      let priority = ($('#priorityL').val());
+    }
     
-    $('#button').on('click', function() {
-    	var todo = {
-      		name: $('#name').val(),
-      		title: $('#title').val(),
-      		done: $('#done').val(),
-      		dueDate: $('#dueDate').val(),
-      		priority: $('#priority').val(),
-      		uid: new Date().getTime()
-       	};
-       	todos.push(todo);
-       	
-       	console.log(todos);
-       	localStorage.setItem("allVal", JSON.stringify(todos));
-       	//var fromLocalStorage = JSON.parse(localStorage.getItem('allVal'));
-		    //console.log(fromLocalStorage);
-       	sliceElements(todos);
-       	$('input').val('');
+    let todo = {
+        name: $('#name').val(),
+        title: $('#title').val(),
+        done: done,
+        dueDate: $('#dueDate').val(),
+        priority: priority,
+        uid: new Date().getTime()
+      };
+    todos.push(todo);
+    
+    console.log(todos);
+    localStorage.setItem("allVal", JSON.stringify(todos));
+    sliceElements(todos);
+    $("input[name='task']").val('');
+  }
 
-	});
+  function sliceElements(todoList){
+    let len = todoList.length;
+    $('ol').empty();
 
-	function sliceElements(todoList){
-		var len = todoList.length;
-		$('ol').empty();
+    for (let i = 0; i<len; i++) {
+      let elementArray = todoList.slice(i, i+1);
+      let elementObject = elementArray.reduce(function(acc, cur, i) {
+          acc[i] = cur;
+          return acc;
+      }, {}); //converting the element array of objects into object of
+      appendToList(elementObject);
+    };
+  }
 
-		for (var i = 0; i<len; i++) {
-			var elementArray = todoList.slice(i, i+1);
-			var elementObject = elementArray.reduce(function(acc, cur, i) {
-			  	acc[i] = cur;
-			  	return acc;
-			}, {}); //converting the element array of objects into object of
+  function appendToList (elementObject) {
+    Object.keys(elementObject).forEach((key) => {
+      let getName = elementObject[key].name;
+      let getTitle = elementObject[key].title;
+      let getDone = elementObject[key].done;
+      let getDueDate = elementObject[key].dueDate;
+      let getPriority = elementObject[key].priority;
+      let getUid = elementObject[key].uid;
 
-			Object.keys(elementObject).forEach((key) => {
-				var getName = elementObject[key].name;
-				var getTitle = elementObject[key].title;
-				var getDone = elementObject[key].done;
-				var getDueDate = elementObject[key].dueDate;
-				var getPriority = elementObject[key].priority;
-				var getUid = elementObject[key].uid;
-
-				//console.log(getUid);
-
-				/*localStorage.setItem("allVal", JSON.stringify(elementObject));
-       			console.log(localStorage.getItem('allVal'));*/
-       			//var uid = new Date().getTime();
-
-   			$('ol').append('<li class="form-control liChild">' + getName + ' : ' + getTitle + ' : ' + getDone + ' : ' + getDueDate + ' : ' + getPriority + '</li>');
-        $('li:last-child').attr('data-uid', getUid);
-			});
-		};
-	};
-
-    $(document).on('click', 'li', function() {
-    	$(this).toggleClass('bg-secondary');
-
+      $('ol').append('<li class="form-control liChild">' + getName + ' : ' + getTitle + ' : ' + getDone + ' : ' + getDueDate + ' : ' + getPriority + '</li>');
+      $('li:last-child').attr('data-uid', getUid);
     });
+  }
 
+  function updateLocalStorageOnSort (event, ui) {
+          
+    let updatedListLen = $(event.target).children().length;
+    let todosLen = todos.length;
     
-    //localStorage.removeItem('allVal');
+    let newTodos = [];
 
+    //working properly-----------------------------------------------------------
+    for (let i = 0; i < updatedListLen; i++) {
+      for (let j = 0; j < todosLen; j++) {
+        if(todos[j].uid == event.target.children[i].attributes[1].nodeValue) {
+          newTodos.push(todos[j]);
+          break;
+        };
+      }
+    };
+
+    console.log(newTodos);
+    localStorage.setItem("allVal", JSON.stringify(newTodos));
+  }
+
+	$(window).on('load', loadPrevValues());
+    
+  $('#button').on('click', getValuesFromForm());	
+
+  $(document).on('click', 'li', function() {
+  	$(this).toggleClass('bg-secondary');
+  });
+    
+  //localStorage.removeItem('allVal');
   	
 	$('#list').sortable({
     axis: 'y',
-    stop: function (event, ui) {
-        	
-          var updatedListLen = $(event.target).children().length;
-          var todosLen = todos.length;
-          
-          var newTodos = [];
-          
-          /*var uidArr = [];
-          for (var i = 0; i < updatedListLen; i++) {
-            uidArr.push(existingValues[j].uid);
-            //console.log("its working for i");
-          };*/
-
-          //working properly-----------------------------------------------------------
-          for (var i = 0; i < updatedListLen; i++) {
-            for (var j = 0; j < todosLen; j++) {
-              if(todos[j].uid == event.target.children[i].attributes[1].nodeValue) {
-                newTodos.push(todos[j]);
-                break;
-              };
-              //console.log("its working for j");
-            }
-            //console.log("its working for i");
-          };
-
-          console.log(newTodos);
-          localStorage.setItem("allVal", JSON.stringify(newTodos));
-    	}
-
+    stop: updateLocalStorageOnSort (event, ui)
 	});
 
-	$("#list").disableSelection(); //jquery ui
-
-	
+	//$("#list").disableSelection(); //jquery ui	
 
 })();
